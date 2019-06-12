@@ -1,0 +1,3 @@
+---
+- name: vagrant-rust-dev
+  src: naftulikay.vagrant-rust-dev

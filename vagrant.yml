@@ -1,0 +1,6 @@
+---
+- name: build
+  hosts: all
+  become: true
+  roles:
+    - role: vagrant-rust-dev
