@@ -1,0 +1,3 @@
+[build]
+# build static binaries for linux by default
+target = "x86_64-unknown-linux-musl"
