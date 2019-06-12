@@ -5,3 +5,8 @@ authors = ["Naftuli Kay <me@naftuli.wtf>"]
 edition = "2018"
 
 [dependencies]
+log = "0.4"
+log4rs = "0.8"
+parking_lot = "0.8"
+structopt = "0.2"
+tera = "1.0.0-beta.9"

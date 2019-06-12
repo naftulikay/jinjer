@@ -1,5 +1,5 @@
 ---
-dist: trusty
+dist: xenial
 
 language: rust
 
@@ -14,6 +14,15 @@ matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
+
+addons:
+  apt:
+    packages:
+      - musl
+      - musl-dev
+      - musl-tools
+
+before_install: rustup target add x86_64-unknown-linux-musl
 
 install: cargo build --release --verbose
 script: cargo test --verbose
