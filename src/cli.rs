@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-/// A CLI utility for rendering Jinja templates.
+/// A CLI utility for rendering Jinja-like templates using the Tera template engine.
 #[derive(Debug, StructOpt)]
 #[structopt(author = "")]
 pub struct Args {
@@ -31,6 +31,10 @@ pub struct FactsCommand {}
 
 #[derive(Debug, StructOpt)]
 pub struct RenderCommand {
+    /// Enable HTML auto-escaping of templates in the template renderer. By default, output is not
+    /// safe for HTML.
+    #[structopt(short = "e", long = "auto-escape")]
+    pub autoescape: bool,
     /// Render output to a file rather than to standard output.
     #[structopt(short = "o", long = "output")]
     pub output_file: Option<PathBuf>,
