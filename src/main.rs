@@ -1,5 +1,6 @@
 mod cli;
 mod cmd;
+mod facts;
 mod logging;
 
 use structopt::StructOpt;
