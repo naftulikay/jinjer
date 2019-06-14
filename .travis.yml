@@ -22,10 +22,13 @@ addons:
       - musl-dev
       - musl-tools
 
-before_install: rustup target add x86_64-unknown-linux-musl
+before_install:
+  - rustup target add x86_64-unknown-linux-musl
+  - cargo install --force cargo-audit
 
-install: cargo build --release --verbose
-script: cargo test --verbose
+script:
+  - cargo audit
+  - cargo test --verbose
 
 notifications:
   email:
