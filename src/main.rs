@@ -14,7 +14,7 @@ fn main() {
 
     // execute the given command
     match args.command {
-        cli::Command::Facts(f) => cmd::facts::call(&f),
-        cli::Command::Render(r) => cmd::render::call(&r),
+        cli::Command::Facts(f) => cmd::facts::call(f),
+        cli::Command::Render(r) => cmd::render::call(r),
     }
 }

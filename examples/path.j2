@@ -1,0 +1,3 @@
+{%- for path in env.PATH | split(pat=":") -%}
+{{ path }}
+{% endfor -%}
