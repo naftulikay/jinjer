@@ -1,0 +1,13 @@
+/.ansible/
+/.vagrant/
+
+/examples/
+/target/
+
+/ansible.cfg
+/LICENSE-MIT
+/LICENSE-APACHE
+/README.md
+/requirements.yml
+/vagrant.yml
+/Vagrantfile
