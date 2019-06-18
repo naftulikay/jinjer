@@ -53,6 +53,7 @@ impl Default for Facts {
 
         // install plugins
         f.register("basic", Box::new(plugins::basic::BasicPlugin::new()));
+        f.register("ec2", Box::new(plugins::ec2::Ec2Plugin::new()));
         f.register("env", Box::new(plugins::env::EnvPlugin::new()));
 
         f
