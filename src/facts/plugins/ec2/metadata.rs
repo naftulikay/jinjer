@@ -1,9 +1,19 @@
+use actix_rt::System;
+use actix_web::client::Client;
+
 use crate::facts::FactPlugin;
 use crate::facts::FactSet;
+
+use futures::future::lazy;
+use futures::future::Future;
+
+use log;
 
 use std::default::Default;
 
 use std::io;
+
+static METADATA_URL: &'static str = "http://169.254.169.254/latest/meta-data/";
 
 /// An EC2 instance metadata fact plugin.
 ///
@@ -25,6 +35,22 @@ impl Default for Ec2MetadataPlugin {
 
 impl FactPlugin for Ec2MetadataPlugin {
     fn discover(&self) -> Result<FactSet, io::Error> {
+        log::info!("Discovering EC2 metadata facts...");
+
+        System::new("ec2-metadata")
+            .block_on(lazy(|| {
+                Client::default()
+                    .get(METADATA_URL)
+                    .header("User-Agent", "jinjer")
+                    .send()
+                    .map_err(|e| log::error!("Error: {:?}", e))
+                    .and_then(|response| {
+                        log::info!("Response: {:?}", response);
+                        Ok(())
+                    })
+            }))
+            .unwrap();
+
         Ok(FactSet::new())
     }
 }

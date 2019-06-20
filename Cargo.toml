@@ -5,6 +5,10 @@ authors = ["Naftuli Kay <me@naftuli.wtf>"]
 edition = "2018"
 
 [dependencies]
+actix-rt = "0.2"
+actix-web = "1.0"
+crossbeam = "0.7"
+futures = "0.1"
 log = "0.4"
 log4rs = "0.8"
 num_cpus = "1.10"

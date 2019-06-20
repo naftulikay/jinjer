@@ -3,6 +3,8 @@ mod metadata;
 use crate::facts::FactPlugin;
 use crate::facts::FactSet;
 
+use log;
+
 use serde_json::Value;
 
 use std::default::Default;
@@ -28,6 +30,8 @@ impl Default for Ec2Plugin {
 
 impl FactPlugin for Ec2Plugin {
     fn discover(&self) -> Result<FactSet, io::Error> {
+        log::info!("Discovering EC2 facts...");
+
         let mut r = FactSet::new();
         let meta = metadata::Ec2MetadataPlugin::new();
 
