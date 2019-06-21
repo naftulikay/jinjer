@@ -11,9 +11,13 @@ use log;
 
 use std::default::Default;
 
+use std::env;
+
 use std::io;
 
-static METADATA_URL: &'static str = "http://169.254.169.254/latest/meta-data/";
+lazy_static! {
+    static ref METADATA_URL: String = format!("http://{}/latest/meta-data/", env::var("EC2_METADATA_HOST").unwrap_or("169.254.169.254".to_string()));
+}
 
 /// An EC2 instance metadata fact plugin.
 ///
@@ -40,7 +44,7 @@ impl FactPlugin for Ec2MetadataPlugin {
         System::new("ec2-metadata")
             .block_on(lazy(|| {
                 Client::default()
-                    .get(METADATA_URL)
+                    .get(METADATA_URL.as_str())
                     .header("User-Agent", "jinjer")
                     .send()
                     .map_err(|e| log::error!("Error: {:?}", e))
