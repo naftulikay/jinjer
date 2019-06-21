@@ -19,7 +19,9 @@ static APPENDER_NAME: &'static str = "stderr";
 
 static INITIALIZE: Once = Once::new();
 
-static LOG_FORMAT: &'static str = "{d(%Y-%m-%dT%H:%M:%S%.3f%z)} {l:5.5} [{T}] {M}: {m}{n}";
+static DEFAULT_LOG_FORMAT: &'static str = "{d(%Y-%m-%dT%H:%M:%S%.3f%z)} {l:5.5} [{T}] {M}: {m}{n}";
+
+static LOG_FORMAT_ENV_VAR: &'static str = "LOG4RS_LOG_FORMAT";
 
 static DEFAULT_ROOT_LEVEL: LevelFilter = LevelFilter::Error;
 
@@ -31,7 +33,13 @@ pub fn init(config: &Args) {
 }
 
 fn init_once(config: &Args) {
-    let encoder: Box<Encode> = Box::new(PatternEncoder::new(LOG_FORMAT));
+    let encoder: Box<Encode> = Box::new(PatternEncoder::new(
+        match env::var(LOG_FORMAT_ENV_VAR) {
+            Ok(ref s) => &s,
+            _ => DEFAULT_LOG_FORMAT,
+        }
+    ));
+
     let appender: Box<Append> = Box::new(
         ConsoleAppender::builder()
             .encoder(encoder)
