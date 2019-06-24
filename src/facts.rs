@@ -1,5 +1,9 @@
 pub mod plugins;
 
+use actix_rt::System;
+
+use futures::Future;
+
 use serde_json::Map;
 use serde_json::Value;
 
@@ -28,6 +32,15 @@ impl Facts {
     ///
     /// This operation will take some time as it fetches facts from all available providers.
     pub fn discover(&self) -> FactSet {
+        let mut result = FactSet::new();
+
+        result.extend(self.discover_sync());
+        result.extend(self.discover_async());
+
+        result
+    }
+
+    fn discover_sync(&self) -> FactSet {
         let mut r = FactSet::new();
 
         for (name, plugin) in self.plugins.iter() {
@@ -40,6 +53,11 @@ impl Facts {
         }
 
         r
+    }
+
+    fn discover_async(&self) -> FactSet {
+
+        FactSet::new()
     }
 
     pub fn register(&mut self, id: &str, plugin: Box<dyn FactPlugin>) {
@@ -60,7 +78,15 @@ impl Default for Facts {
     }
 }
 
+/// A plugin which discovers facts synchronously.
 pub trait FactPlugin {
     /// Execute the plugin, discovering and returning all available facts.
     fn discover(&self) -> Result<FactSet, io::Error>;
+}
+
+/// A plugin which discovers facts asynchronously.
+pub trait AsyncFactPlugin {
+    /// Execute the plugin, yielding a future that can be polled for readiness.
+    fn discover(&self) -> Future<Item=FactSet, Error=io::Error>;
+
 }
