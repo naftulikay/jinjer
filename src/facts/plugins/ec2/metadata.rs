@@ -16,7 +16,10 @@ use std::env;
 use std::io;
 
 lazy_static! {
-    static ref METADATA_URL: String = format!("http://{}/latest/meta-data/", env::var("EC2_METADATA_HOST").unwrap_or("169.254.169.254".to_string()));
+    static ref METADATA_URL: String = format!(
+        "http://{}/latest/meta-data/",
+        env::var("EC2_METADATA_HOST").unwrap_or("169.254.169.254".to_string())
+    );
 }
 
 /// An EC2 instance metadata fact plugin.
