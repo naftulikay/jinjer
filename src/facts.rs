@@ -1,5 +1,7 @@
 pub mod plugins;
 
+use actix_rt::System;
+
 use futures::Future;
 
 use serde_json::Map;
@@ -8,27 +10,19 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::default::Default;
 use std::io;
-use std::iter::once;
 
 pub type FactSet = Map<String, Value>;
-
-/// A future that, when executed, returns a set of facts.
-pub type FactSetFuture = Future<Item=FactSet, Error=io::Error>;
-
-/// A registry for asynchronous plugins.
-pub type AsyncPluginRegistry = HashMap<String, Box<dyn AsyncFactPlugin>>;
 
 /// A registry for synchronous plugins.
 pub type PluginRegistry = HashMap<String, Box<dyn FactPlugin>>;
 
 pub struct Facts {
     plugins: PluginRegistry,
-    async_plugins: AsyncPluginRegistry,
 }
 
 impl Facts {
     pub fn new() -> Self {
-        Self { ..Default::default() }
+        Self { plugins: PluginRegistry::default() }
     }
 
     /// Discover all available facts via the registered fact plugins.
@@ -37,42 +31,30 @@ impl Facts {
     pub fn discover(&self) -> FactSet {
         let mut result = FactSet::new();
 
-        for factset in once(self.discover_sync()).chain(once(self.discover_async())) {
-            result.extend(factset);
+        // FIXME this should be parallelized using a stream map over the futures
+        for (name, plugin) in &self.plugins {
+            log::info!("Executing asynchronous plugin {}", name);
+
+            match System::new("jinjer").block_on(plugin.discover()) {
+                Ok(v) => {
+                    log::info!("Successfully determined {} facts.", name);
+                    result.insert(name.to_string(), Value::Object(v));
+                },
+                Err(e) => {
+                    match e.kind() {
+                        io::ErrorKind::NotFound => log::debug!("Unable to resolve {} facts.", name),
+                        _ => log::warn!("Unable to resolve facts for {}: {:?}", name, e),
+                    };
+                },
+            };
         }
 
         result
     }
 
-    /// Discover synchronous fact plugins.
-    /// 
-    /// FIXME either use rayon for parallelism here or just use futures everywhere
-    fn discover_sync(&self) -> FactSet {
-        let mut r = FactSet::new();
-
-        for (name, plugin) in self.plugins.iter() {
-            match plugin.discover() {
-                Ok(f) => {
-                    r.insert(name.to_string(), Value::Object(f));
-                }
-                Err(e) => log::warn!("Discovery failed for {}: {}", name, e),
-            }
-        }
-
-        r
-    }
-
-    /// Discover asynchronous fact plugins.
-    fn discover_async(&self) -> FactSet {
-        FactSet::new()
-    }
-
+    /// Register a plugin.
     pub fn register(&mut self, id: &str, plugin: Box<dyn FactPlugin>) {
-        self.plugins.insert(id.to_string(), plugin);
-    }
-
-    pub fn register_async(&mut self, id: &str, plugin: Box<dyn AsyncFactPlugin>) {
-        self.async_plugins.insert(id.to_string(), plugin);        
+        self.plugins.insert(id.to_string(), plugin.into());
     }
 }
 
@@ -89,15 +71,8 @@ impl Default for Facts {
     }
 }
 
-/// A plugin which discovers facts synchronously.
-pub trait FactPlugin {
-    /// Execute the plugin, discovering and returning all available facts.
-    fn discover(&self) -> Result<FactSet, io::Error>;
-}
-
 /// A plugin which discovers facts asynchronously.
-pub trait AsyncFactPlugin {
+pub trait FactPlugin {
     /// Execute the plugin, yielding a future that can be polled for readiness.
-    fn discover(&self) -> Future<Item=FactSet, Error=io::Error>;
-
+    fn discover(&self) -> Box<dyn Future<Item=FactSet, Error=io::Error>>;
 }

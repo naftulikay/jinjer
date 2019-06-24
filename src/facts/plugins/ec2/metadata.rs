@@ -4,8 +4,8 @@ use actix_web::client::Client;
 use crate::facts::FactPlugin;
 use crate::facts::FactSet;
 
-use futures::future::lazy;
-use futures::future::Future;
+use futures::future;
+use futures::Future;
 
 use log;
 
@@ -41,23 +41,25 @@ impl Default for Ec2MetadataPlugin {
 }
 
 impl FactPlugin for Ec2MetadataPlugin {
-    fn discover(&self) -> Result<FactSet, io::Error> {
-        log::info!("Discovering EC2 metadata facts...");
+    fn discover(&self) -> Box<Future<Item=FactSet, Error=io::Error>> {
+        Box::new(future::lazy(|| {
+            log::info!("Discovering EC2 metadata facts...");
 
-        System::new("ec2-metadata")
-            .block_on(lazy(|| {
-                Client::default()
-                    .get(METADATA_URL.as_str())
-                    .header("User-Agent", "jinjer")
-                    .send()
-                    .map_err(|e| log::error!("Error: {:?}", e))
-                    .and_then(|response| {
-                        log::info!("Response: {:?}", response);
-                        Ok(())
-                    })
-            }))
-            .unwrap();
+            System::new("ec2-metadata")
+                .block_on(futures::lazy(|| {
+                    Client::default()
+                        .get(METADATA_URL.as_str())
+                        .header("User-Agent", "jinjer")
+                        .send()
+                        .map_err(|e| log::error!("Error: {:?}", e))
+                        .and_then(|response| {
+                            log::info!("Response: {:?}", response);
+                            Ok(())
+                        })
+                }))
+                .unwrap();
 
-        Ok(FactSet::new())
+           Ok(FactSet::new())
+        }))
     }
 }
