@@ -41,7 +41,7 @@ impl Default for Ec2MetadataPlugin {
 }
 
 impl FactPlugin for Ec2MetadataPlugin {
-    fn discover(&self) -> Box<Future<Item=FactSet, Error=io::Error>> {
+    fn discover(&self) -> Box<Future<Item = FactSet, Error = io::Error>> {
         Box::new(future::lazy(|| {
             log::info!("Discovering EC2 metadata facts...");
 
@@ -59,7 +59,7 @@ impl FactPlugin for Ec2MetadataPlugin {
                 }))
                 .unwrap();
 
-           Ok(FactSet::new())
+            Ok(FactSet::new())
         }))
     }
 }
