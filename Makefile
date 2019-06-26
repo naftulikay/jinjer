@@ -4,7 +4,7 @@ EXEC_NAME:=jinjer
 RUST_RELEASE_TARGET:=x86_64-unknown-linux-musl
 
 release:
-	@cargo build --release --target $(RUST_RELEASE_TARGET)
+	@cargo build --release --bin $(EXEC_NAME) --target $(RUST_RELEASE_TARGET)
 
 strip:
 	@strip target/$(RUST_RELEASE_TARGET)/release/$(EXEC_NAME)
