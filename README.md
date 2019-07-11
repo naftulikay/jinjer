@@ -84,7 +84,7 @@ Licensed at your discretion under either:
  - [MIT License](./LICENSE-MIT)
 
  [docker]: https://cloud.docker.com/repository/docker/naftulikay/jinjer
- [docker.svg]: https://img.shields.io/docker/build/naftulikay/jinjer.svg
+ [docker.svg]: https://img.shields.io/docker/cloud/build/naftulikay/jinjer.svg
  [tera]: https://tera.netlify.com/
  [travis]: https://travis-ci.org/naftulikay/jinjer
  [travis.svg]: https://travis-ci.org/naftulikay/jinjer.svg?branch=master
