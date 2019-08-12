@@ -1,16 +1,19 @@
 pub mod plugins;
 
+use actix_rt::System;
+
+use futures::Future;
+
 use serde_json::Map;
 use serde_json::Value;
 
 use std::collections::HashMap;
-
 use std::default::Default;
-
 use std::io;
 
 pub type FactSet = Map<String, Value>;
 
+/// A registry for synchronous plugins.
 pub type PluginRegistry = HashMap<String, Box<dyn FactPlugin>>;
 
 pub struct Facts {
@@ -19,31 +22,39 @@ pub struct Facts {
 
 impl Facts {
     pub fn new() -> Self {
-        Self {
-            plugins: PluginRegistry::new(),
-        }
+        Self { plugins: PluginRegistry::default() }
     }
 
     /// Discover all available facts via the registered fact plugins.
     ///
     /// This operation will take some time as it fetches facts from all available providers.
     pub fn discover(&self) -> FactSet {
-        let mut r = FactSet::new();
+        let mut result = FactSet::new();
 
-        for (name, plugin) in self.plugins.iter() {
-            match plugin.discover() {
-                Ok(f) => {
-                    r.insert(name.to_string(), Value::Object(f));
-                }
-                Err(e) => log::warn!("Discovery failed for {}: {}", name, e),
-            }
+        // FIXME this should be parallelized using a stream map over the futures
+        for (name, plugin) in &self.plugins {
+            log::info!("Executing asynchronous plugin {}", name);
+
+            match System::new("jinjer").block_on(plugin.discover()) {
+                Ok(v) => {
+                    log::info!("Successfully determined {} facts.", name);
+                    result.insert(name.to_string(), Value::Object(v));
+                },
+                Err(e) => {
+                    match e.kind() {
+                        io::ErrorKind::NotFound => log::debug!("Unable to resolve {} facts.", name),
+                        _ => log::warn!("Unable to resolve facts for {}: {:?}", name, e),
+                    };
+                },
+            };
         }
 
-        r
+        result
     }
 
+    /// Register a plugin.
     pub fn register(&mut self, id: &str, plugin: Box<dyn FactPlugin>) {
-        self.plugins.insert(id.to_string(), plugin);
+        self.plugins.insert(id.to_string(), plugin.into());
     }
 }
 
@@ -53,13 +64,15 @@ impl Default for Facts {
 
         // install plugins
         f.register("basic", Box::new(plugins::basic::BasicPlugin::new()));
+        f.register("ec2", Box::new(plugins::ec2::Ec2Plugin::new()));
         f.register("env", Box::new(plugins::env::EnvPlugin::new()));
 
         f
     }
 }
 
+/// A plugin which discovers facts asynchronously.
 pub trait FactPlugin {
-    /// Execute the plugin, discovering and returning all available facts.
-    fn discover(&self) -> Result<FactSet, io::Error>;
+    /// Execute the plugin, yielding a future that can be polled for readiness.
+    fn discover(&self) -> Box<dyn Future<Item=FactSet, Error=io::Error>>;
 }
